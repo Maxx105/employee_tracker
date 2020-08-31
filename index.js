@@ -50,7 +50,7 @@ function init() {
       } else if (res.artist === "Add Employee") {
         addEmployee();
       } else if (res.artist === "Remove Employee") {
-        //removeEmployee()
+        removeEmployee();
       } else if (res.artist === "Update Employee Role") {
         //updateEmployeeRole()
       } else if (res.artist === "Update Employee Manager") {
@@ -72,7 +72,7 @@ let allEmployeesArray;
 
 function viewAllEmployees() {
   const query1 = connection.query(`
-  SELECT employee.id, employee.first_name, employee.last_name, role.title, department.department, role.salary
+  SELECT employee.id, employee.first_name, employee.last_name, role.title, department.name AS 'department', role.salary
   FROM employee
   INNER JOIN role ON employee.role_id = role.id 
   INNER JOIN department ON role.department_id = department.id
@@ -82,7 +82,7 @@ function viewAllEmployees() {
         throw err;
       }
       allEmployeesArray = res;
-      console.log(allEmployeesArray);
+      //console.log(allEmployeesArray);
 
       const query2 = connection.query(`
       SELECT mgr.first_name, mgr.last_name
@@ -101,6 +101,7 @@ function viewAllEmployees() {
           }
 
           console.table(allEmployeesArray);
+
           init();
         }
       )
@@ -137,98 +138,96 @@ function viewAllEmployeesByManager() {
 
 function addEmployee() {
   const query = connection.query("SELECT employee.first_name, employee.last_name, role.title FROM employee INNER JOIN role ON employee.id=role.id;",
-  function (err, res) {
-    if (err) {
-      throw err;
-    }
-    employeeArray = [];
-    roleArray = [];
-    res.forEach(role => roleArray.push(role.title));
-    res.forEach(employee => employeeArray.push(`${employee.first_name} ${employee.last_name}`));
-    inquirer.prompt(
-      [
+    function (err, res) {
+      if (err) {
+        throw err;
+      }
+      console.log(res);
+      employeeArray = [];
+      roleArray = [];
+      res.forEach(role => roleArray.push(role.title));
+      res.forEach(employee => employeeArray.push(`${employee.first_name} ${employee.last_name}`));
+      inquirer.prompt(
+        [
+          {
+            type: "input",
+            name: "firstName",
+            message: "What is the employee's first name?",
+          },
+          {
+            type: "input",
+            name: "lastName",
+            message: "What is the employee's last name?",
+          },
+          {
+            type: "rawlist",
+            name: "role",
+            message: "What is the employee's role?",
+            choices: roleArray
+          },
+          {
+            type: "rawlist",
+            name: "manager",
+            message: "Who is the employee's manager?",
+            choices: ["None"].concat(employeeArray)
+          }
+        ]
+      ).then(function(answers) {
+        connection.query("INSERT INTO employee SET ?",
         {
-          type: "input",
-          name: "firstName",
-          message: "What is the employee's first name?",
+          first_name: answers.firstName,
+          last_name: answers.lastName,
+          role_id: roleArray.indexOf(answers.role) + 1,
+          manager_id: employeeArray.indexOf(answers.manager) + 1
         },
-        {
-          type: "input",
-          name: "lastName",
-          message: "What is the employee's last name?",
-        },
-        {
-          type: "rawlist",
-          name: "role",
-          message: "What is the employee's role?",
-          choices: roleArray
-        },
-        {
-          type: "rawlist",
-          name: "manager",
-          message: "Who is the employee's manager?",
-          choices: employeeArray
-        }
-      ]
-    ).then(function(res) {
-        let answers = res;
-        // console.log(res);
-        connection.query("SELECT * FROM role INNER JOIN employee ON role.id=employee.role_id;",
         function (err, res) {
           if (err) {
             throw err;
           }
-          // console.log(res);
-
-          //console.log(allRolesArray);
-
-          let roleId = res[res.length-1].id;
-
-          // allRolesArray.forEach((roleData, i) => {
-          //   //roleId = roleData.id;
-          //   if (roleData.title === answers.role) {
-          //     roleId = i + 1;
-          //     // console.log(roleId);
-          //     // console.log(roleData);
-          //   }
-          // });
-
-          connection.query("INSERT INTO employee SET ?",
-            {
-              first_name: answers.firstName,
-              last_name: answers.lastName,
-              role_id: roleId,
-              manager_id: 1
-            },
-            function (err, res) {
-              if (err) {
-                throw err;
-              }
-              // console.log(allEmployeesArray)
-              // console.log(`${res.affectedRows} item added!`);
-              init();
-            }
-          );
-
-
-
-
-          // console.log(allEmployeesArray)
           // console.log(`${res.affectedRows} item added!`);
-          // init();
+          init();
         }
       );
     });
-  }
-)
-  
-
-  // const query = 
+  });
 }
+
 
 function removeEmployee() {
-  
+  const query = connection.query("SELECT * FROM employee",
+    function (err, res) {
+      const allEmployees = res;
+      let allEmployeeNames = [];
+      let employeeIds = [];
+      allEmployees.forEach(employeeData => {
+        allEmployeeNames.push(`${employeeData.first_name} ${employeeData.last_name}`);
+        employeeIds.push(employeeData.id);
+      });
+      console.log(allEmployeeNames);
+      console.log(employeeIds);
+
+      inquirer.prompt(
+        {
+          type: "rawlist",
+          name: "employee",
+          message: "Which employee would you like to remove?",
+          choices: allEmployeeNames
+        }
+      ).then(function(answers){        
+        const query = connection.query("DELETE FROM employee WHERE ?",
+          {
+            id: employeeIds[allEmployeeNames.indexOf(answers.employee)]
+          },
+          function (err, res) {
+            if (err) {
+              throw err;
+            }
+            init();
+        });
+      });
+  })
 }
+  
 
 function updateEmployeeRole() {
   
