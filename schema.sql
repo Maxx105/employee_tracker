@@ -4,7 +4,7 @@ USE employee_trackerDB;
 
 CREATE TABLE department (
 	id INT NOT NULL AUTO_INCREMENT,
-	department VARCHAR(30),
+	name VARCHAR(30),
     PRIMARY KEY (id)
 );
 
@@ -27,3 +27,18 @@ CREATE TABLE employee (
     -- FOREIGN KEY (role_id) REFERENCES role(id),
     PRIMARY KEY (id)
 );
+
+SELECT * FROM employee;
+SELECT * FROM role;
+SELECT * FROM department;
+
+SELECT * FROM role INNER JOIN employee ON role.id=employee.role_id;
+
+SELECT employee.first_name, employee.last_name, role.title 
+FROM employee
+INNER JOIN role ON employee.id=role.id;
+
+SELECT employee.id, employee.first_name, employee.last_name, role.title, department.department, role.salary
+  FROM employee
+  INNER JOIN role ON employee.role_id = role.id 
+  INNER JOIN department ON role.department_id = department.id

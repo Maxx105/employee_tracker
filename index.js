@@ -35,6 +35,7 @@ function init() {
           "Update Employee Role",
           "Update Employee Manager",
           "View All Roles",
+          "View All Departments",
           "Add Role",
           "Remove Role",
           "Exit"
@@ -56,7 +57,9 @@ function init() {
       } else if (res.artist === "Update Employee Manager") {
         //updateEmployeeManager()
       } else if (res.artist === "View All Roles") {
-        //viewAllRoles()
+        viewAllRoles();
+      } else if (res.artist === "View All Departments") {
+        viewAllDepartments();
       } else if (res.artist === "Add Role") {
         //addRole()
       } else if (res.artist === "Remove Role") {
@@ -68,7 +71,7 @@ function init() {
     });
 }
 
-let allEmployeesArray;
+//let allEmployeesArray;
 
 function viewAllEmployees() {
   const query1 = connection.query(`
@@ -81,21 +84,17 @@ function viewAllEmployees() {
       if (err) {
         throw err;
       }
-      allEmployeesArray = res;
-      //console.log(allEmployeesArray);
+      let allEmployeesArray = res;
 
       const query2 = connection.query(`
       SELECT mgr.first_name, mgr.last_name
-      FROM employee AS emp
-      LEFT JOIN employee mgr ON emp.manager_id = mgr.id;`,
+      FROM employee
+      LEFT JOIN employee mgr ON employee.manager_id = mgr.id;`,
         function (err, res) {
           if (err) {
             throw err;
           }
-
-          //console.log(allEmployeesArray);
-          //console.log(res);
-
+          
           for (i = 0; i < allEmployeesArray.length; i++) {
             allEmployeesArray[i].manager = `${res[i].first_name} ${res[i].last_name}`
           }
@@ -142,11 +141,31 @@ function addEmployee() {
       if (err) {
         throw err;
       }
-      console.log(res);
-      employeeArray = [];
+
+      
       roleArray = [];
-      res.forEach(role => roleArray.push(role.title));
-      res.forEach(employee => employeeArray.push(`${employee.first_name} ${employee.last_name}`));
+      employeeArray = ["NONE"];
+      employeeIDs = [];
+
+      const query1 = connection.query("SELECT * FROM role",
+        function (err, res) {
+          if (err) {
+            throw err;
+          }
+          res.forEach(role => roleArray.push(role.title));
+        });
+
+      const query2 = connection.query("SELECT * FROM employee",
+      function (err, res) {
+        if (err) {
+          throw err;
+        }
+        res.forEach(employeeId => employeeIDs.push(employeeId.id));
+        res.forEach(employee => employeeArray.push(`${employee.first_name} ${employee.last_name}`));
+      });
+      
+      
+
       inquirer.prompt(
         [
           {
@@ -169,22 +188,27 @@ function addEmployee() {
             type: "rawlist",
             name: "manager",
             message: "Who is the employee's manager?",
-            choices: ["None"].concat(employeeArray)
+            choices: employeeArray
           }
         ]
       ).then(function(answers) {
+        let employeeIDIndex = employeeArray.indexOf(answers.manager) - 1;
+        // if (employeeIDs.length <= 1) {
+        //   employeeIDIndex = employeeArray.indexOf(answers.manager);
+        // } else {
+        //   employeeIDIndex = employeeArray.indexOf(answers.manager) - 1;
+        // }
         connection.query("INSERT INTO employee SET ?",
         {
           first_name: answers.firstName,
           last_name: answers.lastName,
           role_id: roleArray.indexOf(answers.role) + 1,
-          manager_id: employeeArray.indexOf(answers.manager) + 1
+          manager_id: employeeIDs[employeeIDIndex]
         },
         function (err, res) {
           if (err) {
             throw err;
           }
-          // console.log(`${res.affectedRows} item added!`);
           init();
         }
       );
@@ -203,28 +227,30 @@ function removeEmployee() {
         allEmployeeNames.push(`${employeeData.first_name} ${employeeData.last_name}`);
         employeeIds.push(employeeData.id);
       });
-      console.log(allEmployeeNames);
-      console.log(employeeIds);
-
-      inquirer.prompt(
-        {
-          type: "rawlist",
-          name: "employee",
-          message: "Which employee would you like to remove?",
-          choices: allEmployeeNames
-        }
-      ).then(function(answers){        
-        const query = connection.query("DELETE FROM employee WHERE ?",
+      if (allEmployees.length > 0) {  
+        inquirer.prompt(
           {
-            id: employeeIds[allEmployeeNames.indexOf(answers.employee)]
-          },
-          function (err, res) {
-            if (err) {
-              throw err;
-            }
-            init();
+            type: "rawlist",
+            name: "employee",
+            message: "Which employee would you like to remove?",
+            choices: allEmployeeNames
+          }
+        ).then(function(answers){  
+
+          const query = connection.query("DELETE FROM employee WHERE ?",
+            {
+              id: employeeIds[allEmployeeNames.indexOf(answers.employee)]
+            },
+            function (err, res) {
+              if (err) {
+                throw err;
+              }
+              init();
+          });
         });
-      });
+      } else {
+        init();
+      }
   })
 }
   
@@ -238,7 +264,25 @@ function updateEmployeeManager() {
 }
 
 function viewAllRoles() {
-  
+  const query = connection.query(`SELECT role.id, role.title, role.salary FROM role`,
+    function (err, res) {
+      if (err) {
+        throw err;
+      }
+      console.table(res);
+      init();
+    });
+}
+
+function viewAllDepartments() {
+  const query = connection.query(`SELECT department.id, department.name FROM department`,
+    function (err, res) {
+      if (err) {
+        throw err;
+      }
+      console.table(res);
+      init();
+    });
 }
 
 function addRole() {
