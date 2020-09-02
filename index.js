@@ -90,7 +90,8 @@ function viewAllEmployees() {
       const query2 = connection.query(`
       SELECT mgr.first_name, mgr.last_name
       FROM employee
-      LEFT JOIN employee mgr ON employee.manager_id = mgr.id;`,
+      LEFT JOIN employee mgr ON employee.manager_id = mgr.id
+      ORDER BY employee.id ASC;`,
         function (err, res) {
           if (err) {
             throw err;
