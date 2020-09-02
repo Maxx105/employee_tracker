@@ -35,10 +35,9 @@ function init() {
           "Remove Role",
           "Add Department",
           "Remove Department",
+          "Update Employee Role",
           // "View All Employees By Department",
           // "View All Employees by Manager",
-
-          "Update Employee Role",
           // "Update Employee Manager",
           "Exit"
         ]
@@ -62,18 +61,17 @@ function init() {
         addDepartment();
       } else if (res.artist === "Remove Department") {
         removeDepartment();
+      } else if (res.artist === "Update Employee Role") {
+        updateEmployeeRole();
       } else if (res.artist === "View All Employees By Department") {
         //viewAllEmployeesByDepartment()
       } else if (res.artist === "View All Employees by Manager") {
         //viewAllEmployeesByManager()
-      } else if (res.artist === "Update Employee Role") {
-        updateEmployeeRole();
       } else if (res.artist === "Update Employee Manager") {
         //updateEmployeeManager()
       } else if (res.artist === "Exit") {
         connection.end();
       }
-      //console.log(res);
     });
 }
 
@@ -111,14 +109,6 @@ function viewAllEmployees() {
     }
   );
 }
-
-function viewAllEmployeesByDepartment() {
-  
-}
-
-function viewAllEmployeesByManager() {
-  
-} 
 
 function addEmployee() {
   const query = connection.query("SELECT employee.first_name, employee.last_name, role.title FROM employee INNER JOIN role ON employee.role_id=role.id;",
@@ -301,10 +291,6 @@ function updateEmployeeRole() {
   });
 }
 
-function updateEmployeeManager() {
-
-}
-
 function viewAllRoles() {
   const query = connection.query(`SELECT role.id, role.title, role.salary FROM role`,
     function (err, res) {
@@ -466,5 +452,19 @@ function removeDepartment() {
     }
   });
 }
+
+// FOR FUTURE DEVELOPMENT
+
+// function viewAllEmployeesByDepartment() {
+  
+// }
+
+// function viewAllEmployeesByManager() {
+  
+// } 
+
+// function updateEmployeeManager() {
+
+// }
 
 
