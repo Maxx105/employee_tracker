@@ -16,7 +16,6 @@ connection.connect(function (err) {
   };
   console.log("connected as id " + connection.threadId);
   init();
-  //connection.end();
 });
 
 function init() {
@@ -39,7 +38,7 @@ function init() {
           // "View All Employees By Department",
           // "View All Employees by Manager",
 
-          // "Update Employee Role",
+          "Update Employee Role",
           // "Update Employee Manager",
           "Exit"
         ]
@@ -68,7 +67,7 @@ function init() {
       } else if (res.artist === "View All Employees by Manager") {
         //viewAllEmployeesByManager()
       } else if (res.artist === "Update Employee Role") {
-        //updateEmployeeRole()
+        updateEmployeeRole();
       } else if (res.artist === "Update Employee Manager") {
         //updateEmployeeManager()
       } else if (res.artist === "Exit") {
@@ -114,26 +113,7 @@ function viewAllEmployees() {
 }
 
 function viewAllEmployeesByDepartment() {
-  // const query = connection.query("SELECT * FROM department",
-  // function(err, res) {
-  //   res.forEach(data => console.log(data.name));
-  // })
   
-  // inquirer.prompt(
-  //   [
-  //     {
-  //       type: "rawlist",
-  //       name: "department",
-  //       message: "Select a department.",
-  //       choices: [department.name]
-  //     }
-  //   ]).then(function(res) {
-      
-  //   });
-  // const query = connection.query("SELECT * FROM employees WHERE ?"),
-  // {
-    
-  // }
 }
 
 function viewAllEmployeesByManager() {
@@ -141,16 +121,16 @@ function viewAllEmployeesByManager() {
 } 
 
 function addEmployee() {
-  const query = connection.query("SELECT employee.first_name, employee.last_name, role.title FROM employee INNER JOIN role ON employee.id=role.id;",
+  const query = connection.query("SELECT employee.first_name, employee.last_name, role.title FROM employee INNER JOIN role ON employee.role_id=role.id;",
     function (err, res) {
       if (err) {
         throw err;
       }
 
-      
-      roleArray = [];
+      let roleArray = [];
+      let employeeArray = [];
       employeeArray = ["NONE"];
-      employeeIDs = [];
+      let employeeIDs = [];
 
       const query1 = connection.query("SELECT * FROM role",
         function (err, res) {
@@ -169,8 +149,6 @@ function addEmployee() {
         res.forEach(employee => employeeArray.push(`${employee.first_name} ${employee.last_name}`));
       });
       
-      
-
       inquirer.prompt(
         [
           {
@@ -198,11 +176,6 @@ function addEmployee() {
         ]
       ).then(function(answers) {
         let employeeIDIndex = employeeArray.indexOf(answers.manager) - 1;
-        // if (employeeIDs.length <= 1) {
-        //   employeeIDIndex = employeeArray.indexOf(answers.manager);
-        // } else {
-        //   employeeIDIndex = employeeArray.indexOf(answers.manager) - 1;
-        // }
         connection.query("INSERT INTO employee SET ?",
         {
           first_name: answers.firstName,
@@ -220,7 +193,6 @@ function addEmployee() {
     });
   });
 }
-
 
 function removeEmployee() {
   const query = connection.query("SELECT * FROM employee",
@@ -259,9 +231,74 @@ function removeEmployee() {
   })
 }
   
-
 function updateEmployeeRole() {
-  
+  const query = connection.query(`
+    SELECT employee.id, employee.first_name, employee.last_name, role.title, employee.role_id
+    FROM employee
+    INNER JOIN role ON employee.role_id=role.id;`,
+    function (err, res) {
+      if (err) {
+        throw err;
+      }
+      let allEmployees = res;
+      let allEmployeeNames = [];
+      let allRoleTitles = [];
+      let employeeIds = [];
+      let roleIds = [];
+
+      const query2 = connection.query("SELECT * FROM role",
+      function (err, res) {
+        if (err) {
+          throw err;
+        }
+        res.forEach(role => {
+          roleIds.push(role.id);
+          allRoleTitles.push(role.title)
+        });
+      });
+
+      allEmployees.forEach(employeeData => {
+        allEmployeeNames.push(`${employeeData.first_name} ${employeeData.last_name}`);
+        employeeIds.push(employeeData.id);
+      });
+
+      if (allEmployees.length > 0) {
+        inquirer.prompt(
+          [
+            {
+              type: "rawlist",
+              name: "employee",
+              message: "Which employee would you like to change the role of?",
+              choices: allEmployeeNames
+            },
+            {
+              type: "rawlist",
+              name: "newRole",
+              message: "Which role would you like to assign to this employee?",
+              choices: allRoleTitles
+            }
+          ]
+        ).then(function(answers) {
+          const query = connection.query(`UPDATE employee SET ? WHERE ?`,
+          [
+            {
+              role_id: roleIds[allRoleTitles.indexOf(answers.newRole)]
+            },
+            {
+              id: employeeIds[allEmployeeNames.indexOf(answers.employee)]
+            }
+          ],
+          function (err, res) {
+            if (err) {
+              throw err;
+            }
+            init();
+        });
+      });
+    } else {
+      init();
+    }
+  });
 }
 
 function updateEmployeeManager() {
@@ -354,9 +391,6 @@ function removeRole() {
           choices: allRoleTitles
         }
       ).then(function(answers){  
-        console.log(answers);
-        console.log(allRoleTitles);
-        console.log(roleIds);
         const query = connection.query("DELETE FROM role WHERE ?",
           {
             id: roleIds[allRoleTitles.indexOf(answers.role)]
@@ -371,7 +405,7 @@ function removeRole() {
     } else {
       init();
     }
-})
+  })
 }
 
 function addDepartment() {
@@ -398,7 +432,39 @@ function addDepartment() {
 }
 
 function removeDepartment() {
-  
+  const query = connection.query("SELECT * FROM department",
+  function (err, res) {
+    const allDepartments = res;
+    let allDepartmentNames = [];
+    let departmentIds = [];
+    allDepartments.forEach(departmentData => {
+      allDepartmentNames.push(departmentData.name);
+      departmentIds.push(departmentData.id);
+    });
+    if (allDepartments.length > 0) {  
+      inquirer.prompt(
+        {
+          type: "rawlist",
+          name: "department",
+          message: "Which department would you like to remove?",
+          choices: allDepartmentNames
+        }
+      ).then(function(answers){  
+        const query = connection.query("DELETE FROM department WHERE ?",
+          {
+            id: departmentIds[allDepartmentNames.indexOf(answers.department)]
+          },
+          function (err, res) {
+            if (err) {
+              throw err;
+            }
+            init();
+        });
+      });
+    } else {
+      init();
+    }
+  });
 }
 
 
