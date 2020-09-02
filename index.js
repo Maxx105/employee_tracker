@@ -28,50 +28,55 @@ function init() {
         message: "What would you like to do?",
         choices: [
           "View All Employees",
-          "View All Employees By Department",
-          "View All Employees by Manager",
-          "Add Employee",
-          "Remove Employee",
-          "Update Employee Role",
-          "Update Employee Manager",
           "View All Roles",
           "View All Departments",
+          "Add Employee",
+          "Remove Employee",
           "Add Role",
           "Remove Role",
+          "Add Department",
+          "Remove Department",
+          // "View All Employees By Department",
+          // "View All Employees by Manager",
+
+          // "Update Employee Role",
+          // "Update Employee Manager",
           "Exit"
         ]
       }
     ]).then(function(res) {
       if (res.artist === "View All Employees") {
         viewAllEmployees();
-      } else if (res.artist === "View All Employees By Department") {
-        //viewAllEmployeesByDepartment()
-      } else if (res.artist === "View All Employees by Manager") {
-        //viewAllEmployeesByManager()
-      } else if (res.artist === "Add Employee") {
-        addEmployee();
-      } else if (res.artist === "Remove Employee") {
-        removeEmployee();
-      } else if (res.artist === "Update Employee Role") {
-        //updateEmployeeRole()
-      } else if (res.artist === "Update Employee Manager") {
-        //updateEmployeeManager()
       } else if (res.artist === "View All Roles") {
         viewAllRoles();
       } else if (res.artist === "View All Departments") {
         viewAllDepartments();
+      } else if (res.artist === "Add Employee") {
+        addEmployee();
+      } else if (res.artist === "Remove Employee") {
+        removeEmployee();
       } else if (res.artist === "Add Role") {
-        //addRole()
+        addRole();
       } else if (res.artist === "Remove Role") {
-        //removeRole()
+        removeRole()
+      } else if (res.artist === "Add Department") {
+        addDepartment();
+      } else if (res.artist === "Remove Department") {
+        removeDepartment();
+      } else if (res.artist === "View All Employees By Department") {
+        //viewAllEmployeesByDepartment()
+      } else if (res.artist === "View All Employees by Manager") {
+        //viewAllEmployeesByManager()
+      } else if (res.artist === "Update Employee Role") {
+        //updateEmployeeRole()
+      } else if (res.artist === "Update Employee Manager") {
+        //updateEmployeeManager()
       } else if (res.artist === "Exit") {
         connection.end();
       }
       //console.log(res);
     });
 }
-
-//let allEmployeesArray;
 
 function viewAllEmployees() {
   const query1 = connection.query(`
@@ -171,12 +176,12 @@ function addEmployee() {
           {
             type: "input",
             name: "firstName",
-            message: "What is the employee's first name?",
+            message: "What is the employee's first name?"
           },
           {
             type: "input",
             name: "lastName",
-            message: "What is the employee's last name?",
+            message: "What is the employee's last name?"
           },
           {
             type: "rawlist",
@@ -286,12 +291,114 @@ function viewAllDepartments() {
 }
 
 function addRole() {
-  
+  departmentArray = [];
+  const query = connection.query("SELECT * FROM department",
+    function (err, res) {
+      if (err) {
+        throw err;
+      }
+      res.forEach(department => departmentArray.push(department.name));
+    });
+
+  inquirer.prompt(
+    [
+      {
+        type: "input",
+        name: "title",
+        message: "What is the role that you would like to add?"
+      },
+      {
+        type: "input",
+        name: "salary",
+        message: "What is the salary of the role?"
+      },
+      {
+        type: "rawlist",
+        name: "department",
+        message: "Which department does this role belong to?",
+        choices: departmentArray
+      }
+    ]
+  ).then(function(answers){
+    const query = connection.query(`INSERT INTO role SET ?`,
+      {
+        title: answers.title,
+        salary: answers.salary,
+        department_id: departmentArray.indexOf(answers.department) + 1
+      },
+      function (err, res) {
+        if (err) {
+          throw err;
+        }
+        init();
+      });
+    });
 }
 
 function removeRole() {
-  
+  const query = connection.query("SELECT * FROM role",
+  function (err, res) {
+    const allRoles = res;
+    let allRoleTitles = [];
+    let roleIds = [];
+    allRoles.forEach(roleData => {
+      allRoleTitles.push(roleData.title);
+      roleIds.push(roleData.id);
+    });
+    if (allRoles.length > 0) {  
+      inquirer.prompt(
+        {
+          type: "rawlist",
+          name: "role",
+          message: "Which role would you like to remove?",
+          choices: allRoleTitles
+        }
+      ).then(function(answers){  
+        console.log(answers);
+        console.log(allRoleTitles);
+        console.log(roleIds);
+        const query = connection.query("DELETE FROM role WHERE ?",
+          {
+            id: roleIds[allRoleTitles.indexOf(answers.role)]
+          },
+          function (err, res) {
+            if (err) {
+              throw err;
+            }
+            init();
+        });
+      });
+    } else {
+      init();
+    }
+})
 }
 
+function addDepartment() {
+  inquirer.prompt(
+    [
+      {
+        type: "input",
+        name: "name",
+        message: "What is the department that you would like to add?"
+      }
+    ]
+  ).then(function(answers){
+    const query = connection.query(`INSERT INTO department SET ?`,
+      {
+        name: answers.name,
+      },
+      function (err, res) {
+        if (err) {
+          throw err;
+        }
+        init();
+      });
+    });
+}
+
+function removeDepartment() {
+  
+}
 
 
