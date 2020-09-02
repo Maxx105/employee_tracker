@@ -228,7 +228,7 @@ function removeEmployee() {
       } else {
         init();
       }
-  })
+  });
 }
   
 function updateEmployeeRole() {
