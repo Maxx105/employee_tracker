@@ -3,7 +3,7 @@ UCI Boot Camp Homework 12 - Employee Tracker
 
 ![deployed application](Assets/deployed_app.JPG)
 
-Click [HERE]() for video demonstration of deployed application.
+Click [HERE](https://drive.google.com/file/d/1xyv4SATVVFrjfZYth0htDts9iJiROXqZ/view) for video demonstration of deployed application.
 
 ## Description 
  This was the twelth homework assignment for the full stack web development program at UC Irvine, in which the goal was to build a CLI based Content Management System that allows the user to manage a company's employees. It gives the user the ability to create, read, update, and delete information about different employees, roles, and departments. 
